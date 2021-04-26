@@ -1,16 +1,38 @@
 # -*- coding: utf-8 -*-
 
 import torch
-from recall.collaborative.lightfm import LightFM
-from recall.collaborative.mlp import MLP
-from recall.collaborative.ease import EASE
-from recall.collaborative.neu import NeuCF
-from recall.helper.cuda import gpu, cpu
-from recall.helper.loss import hinge_loss
-from recall.helper.evaluate import auc_score
+from model.collaborative.lightfm import LightFM
+from model.collaborative.mlp import MLP
+from model.collaborative.ease import EASE
+from model.collaborative.neu import NeuCF
+from model.helper.cuda import gpu, cpu
+from model.helper.loss import hinge_loss
+from model.helper.evaluate import auc_score
 
 
 class Recall(torch.nn.Module):
+    
+    """
+    Encodes users (or item sequences) and items in a low dimensional space, using dot products as similarity measure 
+    and Collaborative Filterings or Sequence Models as backend.
+    
+    ----------
+    dataset: class
+        instance of dataset class
+    n_factors: int
+        dimensionality of the embedding space
+    net_type: string
+        type of the model/net.
+        "LightFM" -> Collaborative Filtering with (optional) item metadata with add operator and dot product
+        "MLP" -> Collaborative Filtering with (optional) item metadata with concat operator and a stack of linear layers
+        "NeuCF" -> Combine LightFM and MLP with a concat layer and a stack of linear layers 
+        "EASE" -> Embarassingly Shallow Auto-Encoder
+        "LSTM" -> Sequence Model using LSTM
+    use_metadata: boolean
+        Use True to add metadata to training procedure
+    use_cuda: boolean, optional
+        Use CUDA as backend. Default to False
+    """
     
     def __init__(self, dataset, n_factors, net_type, use_metadata, use_cuda=False):
         super().__init__()

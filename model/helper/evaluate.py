@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
-from recall.helper.negative_sampling import get_negative_batch
+from model.helper.negative_sampling import get_negative_batch
 import pandas as pd
 import scipy.sparse as sp
 
