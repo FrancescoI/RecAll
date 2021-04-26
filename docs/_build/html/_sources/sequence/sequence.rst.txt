@@ -1,0 +1,6 @@
+Sequence
+============
+
+.. automodule:: recall.sequence
+   :members:
+   :undoc-members:

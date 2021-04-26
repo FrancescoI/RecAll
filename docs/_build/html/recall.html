@@ -1,0 +1,163 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>Recall &#8212; RecAll v0.1.0 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Contents" href="index.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="module-model.recall">
+<span id="recall"></span><h1>Recall<a class="headerlink" href="#module-model.recall" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="model.recall.Recall">
+<em class="property">class </em><code class="sig-prename descclassname">model.recall.</code><code class="sig-name descname">Recall</code><span class="sig-paren">(</span><em class="sig-param">dataset</em>, <em class="sig-param">n_factors</em>, <em class="sig-param">net_type</em>, <em class="sig-param">use_metadata</em>, <em class="sig-param">use_cuda=False</em><span class="sig-paren">)</span><a class="headerlink" href="#model.recall.Recall" title="Permalink to this definition">¶</a></dt>
+<dd><p>Encodes users (or item sequences) and items in a low dimensional space, using dot products as similarity measure 
+and Collaborative Filterings or Sequence Models as backend.</p>
+<dl class="simple">
+<dt>dataset: class</dt><dd><p>instance of dataset class</p>
+</dd>
+<dt>n_factors: int</dt><dd><p>dimensionality of the embedding space</p>
+</dd>
+<dt>net_type: string</dt><dd><p>type of the model/net.
+“LightFM” -&gt; Collaborative Filtering with (optional) item metadata with add operator and dot product
+“MLP” -&gt; Collaborative Filtering with (optional) item metadata with concat operator and a stack of linear layers
+“NeuCF” -&gt; Combine LightFM and MLP with a concat layer and a stack of linear layers 
+“EASE” -&gt; Embarassingly Shallow Auto-Encoder
+“LSTM” -&gt; Sequence Model using LSTM</p>
+</dd>
+<dt>use_metadata: boolean</dt><dd><p>Use True to add metadata to training procedure</p>
+</dd>
+<dt>use_cuda: boolean, optional</dt><dd><p>Use CUDA as backend. Default to False</p>
+</dd>
+</dl>
+<dl class="method">
+<dt id="model.recall.Recall.backward">
+<code class="sig-name descname">backward</code><span class="sig-paren">(</span><em class="sig-param">positive</em>, <em class="sig-param">negative</em>, <em class="sig-param">optimizer</em><span class="sig-paren">)</span><a class="headerlink" href="#model.recall.Recall.backward" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="model.recall.Recall.fit">
+<code class="sig-name descname">fit</code><span class="sig-paren">(</span><em class="sig-param">optimizer</em>, <em class="sig-param">batch_size=1024</em>, <em class="sig-param">epochs=10</em>, <em class="sig-param">split_train_test=False</em>, <em class="sig-param">verbose=False</em><span class="sig-paren">)</span><a class="headerlink" href="#model.recall.Recall.fit" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="model.recall.Recall.forward">
+<code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param">net</em>, <em class="sig-param">batch</em>, <em class="sig-param">batch_size</em><span class="sig-paren">)</span><a class="headerlink" href="#model.recall.Recall.forward" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="model.recall.Recall.get_item_representation">
+<code class="sig-name descname">get_item_representation</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#model.recall.Recall.get_item_representation" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="model.recall.Recall.history">
+<code class="sig-name descname">history</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#model.recall.Recall.history" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">RecAll</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Recall</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="index.html" title="previous chapter">Contents</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2021, Francesco Imbriglia.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.1.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/recall.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
