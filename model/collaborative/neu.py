@@ -2,10 +2,8 @@
 
 import torch
 from torch.autograd import Variable
-from model.embeddings.init_embeddings import ScaledEmbedding, ZeroEmbedding
+from model.embeddings.init_embeddings import ScaledEmbedding
 from model.helper.cuda import cpu, gpu
-import pandas as pd
-import numpy as np
 
 class NeuCF(torch.nn.Module):
     

@@ -11,7 +11,7 @@ class MyDataset():
     
     def _get_interactions(self):
 
-        bucket_uri = f'/content/drive/My Drive/'
+        bucket_uri = f'C:/Users/imbrigliaf/Documents/GitRepo/RecAll/example/data/'
 
         if self.brand == 'missoni':
         

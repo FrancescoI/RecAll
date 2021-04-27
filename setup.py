@@ -3,12 +3,10 @@ from setuptools import find_packages, setup
 
 # Import version
 #__builtins__.__SPOTLIGHT_SETUP__ = True
-from src import __version__ as version  # NOQA
-
 
 setup(
     name='recall',
-    version=version,
+    version='v0.1.0',
     packages=find_packages(),
     install_requires=['torch', 'pandas', 'scipy', 'numpy', 'sklearn'],
     license='MIT',

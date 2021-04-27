@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import torch
+import numpy as np
 from model.collaborative.lightfm import LightFM
 from model.collaborative.mlp import MLP
 from model.collaborative.ease import EASE
@@ -8,6 +9,7 @@ from model.collaborative.neu import NeuCF
 from model.helper.cuda import gpu, cpu
 from model.helper.loss import hinge_loss
 from model.helper.evaluate import auc_score
+from model.helper.negative_sampling import get_negative_batch
 
 
 class Recall(torch.nn.Module):
