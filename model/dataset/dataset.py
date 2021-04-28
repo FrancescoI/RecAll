@@ -2,6 +2,7 @@
 import numpy as np
 import pandas as pd
 import torch
+from torch.utils.data import DataLoader
 from sklearn.preprocessing import LabelEncoder
 
 class DatasetLoader():
@@ -136,7 +137,7 @@ class MyDataset():
         
 class Dataset():
     
-    def __init__(self,users,items,weights=None,metadata=None,metadata_name =None):
+    def __init__(self, users, items, weights=None, metadata=None, metadata_name=None):
 
         self.users = users
         self.items = items
@@ -159,6 +160,7 @@ class Dataset():
         
         return opt_encoder, encoder
     
+    
     def _converting_torch_attr(self):
         self.users_id = torch.from_numpy(self.users_id_numpy)
         self.items_id = torch.from_numpy(self.items_id_numpy)
@@ -167,7 +169,7 @@ class Dataset():
             self.weights = torch.from_numpy(self.weights_numpy)
 
         if hasattr(self, 'metadata'):
-            self.metadata_id  = torch.from_numpy(list(self.metadata_id_numpy))
+            self.metadata_id  = torch.from_numpy(self.metadata_id_numpy)
 
 
     def encoding_label(self):
@@ -178,29 +180,46 @@ class Dataset():
             self.metadata_id_numpy = np.zeros_like(self.metadata)
             self.metadata_encoder = dict()
             
-            for i in self.metadata.shape[1]:
+            for i in range(self.metadata.shape[1]):
                 self.metadata_id_numpy[:,i], self.metadata_encoder[self.metadata_name[i]] = self._encondig_label(self.metadata[:,i])
 
         self._converting_torch_attr()
+        
 
     def __len__(self):
-        return self.data.shape[0]
+        return self.users.shape[0]
+    
 
     def __getitem__(self, index):
         
         if hasattr(self, 'metadata_id') and  hasattr(self, 'weights_id'):
-            return self.user_id[index : (index+1)], self.item_id[index: (index+1)], self.metadata_id[index: (index+1)], self.weights[index: (index+1)]
+            return self.users_id[index : (index+1)], self.items_id[index: (index+1)], self.metadata_id[index: (index+1)], self.weights[index: (index+1)]
 
         elif hasattr(self, 'metadata_id') and ~hasattr(self, 'weights_id'):
-            return self.user_id[index : (index+1)], self.item_id[index: (index+1)], self.metadata_id[index: (index+1)]
+            return self.users_id[index : (index+1)], self.items_id[index: (index+1)], self.metadata_id[index: (index+1)]
         
         elif ~hasattr(self, 'metadata_id') and hasattr(self, 'weights_id'):
-            return self.user_id[index : (index+1)], self.item_id[index: (index+1)], self.weights[index: (index+1)]
+            return self.users_id[index : (index+1)], self.items_id[index: (index+1)], self.weights[index: (index+1)]
         
         else:
-            return self.user_id[index : (index+1)], self.item_id[index: (index+1)]
+            return self.users_id[index : (index+1)], self.items_id[index: (index+1)]
         
         
+class CustomDataLoader(DataLoader):
+    
+    def __init__(self, *args, **kwargs):
+        super(CustomDataLoader, self).__init__(*args, **kwargs)
+        
+        self.dataset = kwargs['dataset']
+        
+        
+    def get_item_metadata_dict(self):
+        
+        """
+        Optionally, depending on recall class refactoring
+        """
+        
+        pass
     
     
     

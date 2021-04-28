@@ -26,7 +26,18 @@ from model.dataset.dataset import *
 import pandas as pd
 import numpy as np
 
-df = pd.DataFrame(data=np.arange(0,30).reshape(10,3),columns=['A','B','C'])
-df['metadata'] = [[np.random.randint(100)]*3 for row in np.arange(0,10)]
+df = pd.DataFrame(data=np.arange(0,50).reshape(10,5),columns=['A','B','C', 'metadata_1', 'metadata_2'])
 
-mydataset = Dataset(df['A'].values,df['B'].values,weights=df['C'].values,metadata=df['metadata'].values,metadata_name =['d','e','f'])
+mydataset = Dataset(df['A'].values,
+                    df['B'].values
+                    #weights=df['C'].values,
+                    #metadata=df[['metadata_1', 'metadata_2']].values,
+                    #metadata_name =['metadata_1','metadata_2']
+                    )
+
+
+from torch.utils.data import DataLoader
+data_loader = CustomDataLoader(dataset=mydataset, batch_size=1)
+
+for i, k in enumerate(data_loader):
+    print(k)
