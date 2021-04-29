@@ -210,7 +210,7 @@ class CustomDataLoader(DataLoader):
     def __init__(self, *args, **kwargs):
         super(CustomDataLoader, self).__init__(*args, **kwargs)
         
-        self.dataset = kwargs['dataset']
+        self.data = kwargs['dataset']
         
         
     def get_item_metadata_dict(self):
