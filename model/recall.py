@@ -41,7 +41,7 @@ class Recall(torch.nn.Module):
              
         self.dataset = dataset
         self.n_users = self.dataset.users_id.max() + 1
-        self.n_items = self.dataset.users_id.max() + 1
+        self.n_items = self.dataset.items_id.max() + 1
         #self.dictionary = dataset.get_item_metadata_dict()
         self.n_metadata = self.dataset.metadata_id.shape[1]
         
@@ -105,7 +105,7 @@ class Recall(torch.nn.Module):
             
         else:
             
-            train = self.dataset.dataset
+            train = self.dataset
         
         
         self.total_train_auc = []

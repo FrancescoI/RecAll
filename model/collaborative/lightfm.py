@@ -23,38 +23,36 @@ class LightFM(torch.nn.Module):
         
         if use_metadata:
             self.n_metadata = self.n_metadata
-            self.metadata = gpu(ScaledEmbedding(self.n_metadata, n_factors), self.use_cuda)
+            self.metadata_emb = gpu(ScaledEmbedding(self.n_metadata, n_factors), self.use_cuda)
 
         
-        self.user = gpu(ScaledEmbedding(self.n_users, self.n_factors), self.use_cuda)
-        self.item = gpu(ScaledEmbedding(self.n_items, self.n_factors), self.use_cuda)
+        self.user_emb = gpu(ScaledEmbedding(self.n_users, self.n_factors), self.use_cuda)
+        self.item_emb = gpu(ScaledEmbedding(self.n_items, self.n_factors), self.use_cuda)
         
-        self.user_bias = gpu(ZeroEmbedding(self.n_users, 1), self.use_cuda)
-        self.item_bias = gpu(ZeroEmbedding(self.n_items, 1), self.use_cuda)
+        self.user_bias_emb = gpu(ZeroEmbedding(self.n_users, 1), self.use_cuda)
+        self.item_bias_emb = gpu(ZeroEmbedding(self.n_items, 1), self.use_cuda)
     
     
-    def forward(self, batch, batch_size):
+    def forward(self, users, items, metadata = None, batch_size=128):
         
         """
         Forward method that express the model as the dot product of user and item embeddings, plus the biases. 
         Item Embeddings itself is the sum of the embeddings of the item ID and its metadata
         """
         
-        user = Variable(gpu(torch.LongTensor(batch['user_id'].values), self.use_cuda))
-        item = Variable(gpu(torch.LongTensor(batch['item_id'].values), self.use_cuda))
-        
-        if self.use_metadata:
-            metadata = Variable(gpu(torch.LongTensor(list(batch['metadata'])), self.use_cuda))
-            metadata = self.metadata(metadata)
+        user = Variable(gpu(users), self.use_cuda))
+        item = Variable(gpu(items), self.use_cuda))
 
-        user_bias = self.user_bias(user)
-        item_bias = self.item_bias(item)
+        user_bias_emb = self.user_bias_emb(user)
+        item_bias_emb = self.item_bias_emb(item)
         
-        user = self.user(user)
-        item = self.item(item)
+        user_emb = self.user_emb(user)
+        item_emb = self.item_emb(item)
         
         if self.use_metadata:
-        
+            metadata = Variable(gpu(metadata)), self.use_cuda))
+            metadata_emb = self.metadata_emb(metadata) 
+            
             ### Reshaping in order to match metadata tensor
             item = item.reshape(len(batch['item_id'].values), 1, self.n_factors)        
             item_metadata = torch.cat([item, metadata], axis=1)
