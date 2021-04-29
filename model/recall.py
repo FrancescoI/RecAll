@@ -36,14 +36,14 @@ class Recall(torch.nn.Module):
         Use CUDA as backend. Default to False
     """
     
-    def __init__(self, dataset, n_factors, net_type, use_metadata, use_cuda=False):
+    def __init__(self, dataset, n_factors, net_type = 'light_fm', use_metadata = False, use_cuda=False):
         super().__init__()
              
         self.dataset = dataset
-        self.n_users = dataset.dataset['user_id'].max() + 1
-        self.n_items = dataset.dataset['item_id'].max() + 1
-        self.dictionary = dataset.get_item_metadata_dict()
-        self.n_metadata = self._get_n_metadata(self.dataset)
+        self.n_users = self.dataset.users_id.max() + 1
+        self.n_items = self.dataset.users_id.max() + 1
+        #self.dictionary = dataset.get_item_metadata_dict()
+        self.n_metadata = self.dataset.metadata_id.shape[1]
         
         self.n_factors = n_factors
         
@@ -52,20 +52,9 @@ class Recall(torch.nn.Module):
         self.net_type = net_type
         self.use_metadata = use_metadata
 
-        self._init_net(net_type=net_type)
-
+        self._init_net()
     
-    def _get_n_metadata(self, dataset):
-        
-        n_metadata = 0
-        
-        for col in dataset.metadata_id:
-            n_metadata += dataset.dataset[col].max() + 1
-        
-        return n_metadata
-
-    
-    def _init_net(self, net_type='lightfm'):
+    def _init_net(self):
 
         if net_type == 'lightfm':
           print('Training LightFM')
@@ -111,12 +100,8 @@ class Recall(torch.nn.Module):
         if split_train_test:
             
             print('|== Splitting Train/Test ==|')
-            
-            data = self.dataset.dataset.iloc[np.random.permutation(len(self.dataset.dataset))]
-            train = data.iloc[:int(len(data) * 0.9)]
-            test = data.iloc[int(len(data) * 0.9):]
-            
-            print(f'Shape Train: {len(train)} \nShape Test: {len(test)}')
+
+            train, test = split_train_test(dataset, test_percentage=0.25, random_state=None)
             
         else:
             
