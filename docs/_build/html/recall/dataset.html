@@ -85,6 +85,12 @@
             
             
               <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../readme.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../readme.html#usage">Usage</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../readme.html#collaborative-filtering-models">Collaborative Filtering models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../readme.html#dataset">Dataset</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="../recall.html">RecAll</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Dataset</a></li>
 </ul>
@@ -158,11 +164,11 @@
 <span id="dataset"></span><h1>Dataset<a class="headerlink" href="#module-model.dataset.dataset" title="Permalink to this headline">¶</a></h1>
 <dl class="class">
 <dt id="model.dataset.dataset.CustomDataLoader">
-<em class="property">class </em><code class="sig-prename descclassname">model.dataset.dataset.</code><code class="sig-name descname">CustomDataLoader</code><span class="sig-paren">(</span><em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#model.dataset.dataset.CustomDataLoader" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">model.dataset.dataset.</code><code class="sig-name descname">CustomDataLoader</code><span class="sig-paren">(</span><em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/model/dataset/dataset.html#CustomDataLoader"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#model.dataset.dataset.CustomDataLoader" title="Permalink to this definition">¶</a></dt>
 <dd><p>This is a sample comment</p>
 <dl class="method">
 <dt id="model.dataset.dataset.CustomDataLoader.get_item_metadata_dict">
-<code class="sig-name descname">get_item_metadata_dict</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#model.dataset.dataset.CustomDataLoader.get_item_metadata_dict" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">get_item_metadata_dict</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/model/dataset/dataset.html#CustomDataLoader.get_item_metadata_dict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#model.dataset.dataset.CustomDataLoader.get_item_metadata_dict" title="Permalink to this definition">¶</a></dt>
 <dd><p>Optionally, depending on recall class refactoring</p>
 </dd></dl>
 
@@ -170,40 +176,40 @@
 
 <dl class="class">
 <dt id="model.dataset.dataset.Dataset">
-<em class="property">class </em><code class="sig-prename descclassname">model.dataset.dataset.</code><code class="sig-name descname">Dataset</code><span class="sig-paren">(</span><em class="sig-param">users</em>, <em class="sig-param">items</em>, <em class="sig-param">weights=None</em>, <em class="sig-param">metadata=None</em>, <em class="sig-param">metadata_name=None</em><span class="sig-paren">)</span><a class="headerlink" href="#model.dataset.dataset.Dataset" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">model.dataset.dataset.</code><code class="sig-name descname">Dataset</code><span class="sig-paren">(</span><em class="sig-param">users</em>, <em class="sig-param">items</em>, <em class="sig-param">weights=None</em>, <em class="sig-param">metadata=None</em>, <em class="sig-param">metadata_name=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/model/dataset/dataset.html#Dataset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#model.dataset.dataset.Dataset" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="method">
 <dt id="model.dataset.dataset.Dataset.encoding_label">
-<code class="sig-name descname">encoding_label</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#model.dataset.dataset.Dataset.encoding_label" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">encoding_label</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/model/dataset/dataset.html#Dataset.encoding_label"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#model.dataset.dataset.Dataset.encoding_label" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 <dl class="class">
 <dt id="model.dataset.dataset.DatasetLoader">
-<em class="property">class </em><code class="sig-prename descclassname">model.dataset.dataset.</code><code class="sig-name descname">DatasetLoader</code><span class="sig-paren">(</span><em class="sig-param">kind</em>, <em class="sig-param">users_col</em>, <em class="sig-param">items_col</em>, <em class="sig-param">weights_col=None</em>, <em class="sig-param">metadata_cols=None</em>, <em class="sig-param">path=None</em>, <em class="sig-param">format='csv'</em>, <em class="sig-param">header='infer'</em>, <em class="sig-param">delimiter='</em>, <em class="sig-param">'</em><span class="sig-paren">)</span><a class="headerlink" href="#model.dataset.dataset.DatasetLoader" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">model.dataset.dataset.</code><code class="sig-name descname">DatasetLoader</code><span class="sig-paren">(</span><em class="sig-param">kind</em>, <em class="sig-param">users_col</em>, <em class="sig-param">items_col</em>, <em class="sig-param">weights_col=None</em>, <em class="sig-param">metadata_cols=None</em>, <em class="sig-param">path=None</em>, <em class="sig-param">format='csv'</em>, <em class="sig-param">header='infer'</em>, <em class="sig-param">delimiter='</em>, <em class="sig-param">'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/model/dataset/dataset.html#DatasetLoader"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#model.dataset.dataset.DatasetLoader" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="method">
 <dt id="model.dataset.dataset.DatasetLoader.custom">
-<code class="sig-name descname">custom</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#model.dataset.dataset.DatasetLoader.custom" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">custom</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/model/dataset/dataset.html#DatasetLoader.custom"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#model.dataset.dataset.DatasetLoader.custom" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="model.dataset.dataset.DatasetLoader.upload_movie_lens">
-<code class="sig-name descname">upload_movie_lens</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#model.dataset.dataset.DatasetLoader.upload_movie_lens" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">upload_movie_lens</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/model/dataset/dataset.html#DatasetLoader.upload_movie_lens"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#model.dataset.dataset.DatasetLoader.upload_movie_lens" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 <dl class="class">
 <dt id="model.dataset.dataset.MyDataset">
-<em class="property">class </em><code class="sig-prename descclassname">model.dataset.dataset.</code><code class="sig-name descname">MyDataset</code><span class="sig-paren">(</span><em class="sig-param">brand</em><span class="sig-paren">)</span><a class="headerlink" href="#model.dataset.dataset.MyDataset" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">model.dataset.dataset.</code><code class="sig-name descname">MyDataset</code><span class="sig-paren">(</span><em class="sig-param">brand</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/model/dataset/dataset.html#MyDataset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#model.dataset.dataset.MyDataset" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="method">
 <dt id="model.dataset.dataset.MyDataset.fit">
-<code class="sig-name descname">fit</code><span class="sig-paren">(</span><em class="sig-param">metadata=None</em>, <em class="sig-param">seasons=None</em><span class="sig-paren">)</span><a class="headerlink" href="#model.dataset.dataset.MyDataset.fit" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">fit</code><span class="sig-paren">(</span><em class="sig-param">metadata=None</em>, <em class="sig-param">seasons=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/model/dataset/dataset.html#MyDataset.fit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#model.dataset.dataset.MyDataset.fit" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="model.dataset.dataset.MyDataset.get_item_metadata_dict">
-<code class="sig-name descname">get_item_metadata_dict</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#model.dataset.dataset.MyDataset.get_item_metadata_dict" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">get_item_metadata_dict</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/model/dataset/dataset.html#MyDataset.get_item_metadata_dict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#model.dataset.dataset.MyDataset.get_item_metadata_dict" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -223,7 +229,7 @@
 
   <div role="contentinfo">
     <p>
-        &#169; Copyright 2021, Francesco Imbriglia.
+        &#169; Copyright 2021, Francesco Imbriglia, Alessio Sciacchitano.
 
     </p>
   </div>

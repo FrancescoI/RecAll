@@ -5,7 +5,7 @@ See the full `documentation <https://www.google.com>`_ for details.
 Installation
 ~~~~~~~~~~~~
 
-.. code-block:: python
+.. code-block:: shell-session 
 
    pip install RecAll
 

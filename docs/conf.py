@@ -22,7 +22,7 @@ sys.path.insert(0, os.path.abspath('..'))
 # -- Project information -----------------------------------------------------
 
 project = 'RecAll'
-copyright = '2021, Francesco Imbriglia'
+copyright = '2021, Francesco Imbriglia, Alessio Sciacchitano'
 author = 'Francesco Imbriglia, Alessio Sciacchitano'
 
 # The full version, including alpha/beta/rc tags
@@ -34,11 +34,25 @@ release = 'v0.1.0'
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['sphinx.ext.autodoc']
-
+extensions = [
+    'sphinx.ext.autodoc',
+    'sphinx.ext.doctest',
+    'sphinx.ext.githubpages',
+    'sphinx.ext.napoleon',
+    'sphinx.ext.viewcode',
+]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
+
+# The master toctree document.
+master_doc = 'index'
+
+# General information about the project.
+project = u'RecAll'
+copyright = u'2021, Francesco Imbriglia, Alessio Sciacchitano'
+authors = u'Francesco Imbriglia, Alessio Sciacchitano'
+
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -51,9 +65,19 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
+pygments_style = 'sphinx'
+todo_include_todos = False
 html_theme = 'sphinx_rtd_theme'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
+
+html_theme_options = {
+    'collapse_navigation': False,
+    'display_version': True,
+    'logo_only': True,
+}
+
+napoleon_use_ivar = True
