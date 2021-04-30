@@ -2,20 +2,18 @@
 
 import numpy as np
 import pandas as pd
+import torch
 
-def get_negative_batch(batch, n_items, item_to_metadata_dict):
+def get_negative_batch(users, n_items, mapping_item_metadata, use_metadata = False):
     
     neg_batch = None
 
-    neg_item_id = np.random.randint(0, n_items-1, len(batch))
+    neg_item_id = torch.randint(0, n_items-1, (len(users),1))
     
-    if item_to_metadata_dict:
-        neg_metadata_id = [item_to_metadata_dict[item] for item in neg_item_id]    
+    if use_metadata:
+        neg_metadata_id = mapping_item_metadata[neg_item_id]   
     else:
         neg_metadata_id = None
     
-    neg_batch = pd.concat([neg_batch, pd.DataFrame({'user_id': batch['user_id'],
-                                                    'item_id': neg_item_id, 
-                                                    'metadata': neg_metadata_id})])
             
-    return neg_batch
+    return neg_item_id, neg_metadata_id

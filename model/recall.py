@@ -2,6 +2,8 @@
 
 import torch
 import numpy as np
+from model.utils import split_train_test
+from model.dataset.dataset import CustomDataLoader
 from model.collaborative.lightfm import LightFM
 from model.collaborative.mlp import MLP
 from model.collaborative.ease import EASE
@@ -10,6 +12,7 @@ from model.helper.cuda import gpu, cpu
 from model.helper.loss import hinge_loss
 from model.helper.evaluate import auc_score
 from model.helper.negative_sampling import get_negative_batch
+
 
 
 class Recall(torch.nn.Module):
@@ -36,31 +39,44 @@ class Recall(torch.nn.Module):
         Use CUDA as backend. Default to False
     """
     
-    def __init__(self, dataset, n_factors, net_type = 'light_fm', use_metadata = False, use_cuda=False):
+    def __init__(self,
+                 dataset, 
+                 n_factors,
+                 net_type = 'light_fm', 
+                 use_metadata = False,
+                 use_cuda=False, 
+                 verbose = True):
         super().__init__()
              
         self.dataset = dataset
-        self.n_users = self.dataset.users_id.max() + 1
-        self.n_items = self.dataset.items_id.max() + 1
-        #self.dictionary = dataset.get_item_metadata_dict()
-        self.n_metadata = self.dataset.metadata_id.shape[1]
+        self.n_users = int(self.dataset.users_id.max()) + 1
+        self.n_items = int(self.dataset.items_id.max()) + 1
+        self.use_metadata = use_metadata
+        self.mapping_item_metadata = dataset.get_item_metadata_mapping if use_metadata else None
         
+
+        self.verbose = verbose
+
         self.n_factors = n_factors
         
         self.use_cuda = use_cuda
 
         self.net_type = net_type
-        self.use_metadata = use_metadata
+        
 
         self._init_net()
-    
+
+    @property
+    def get_n_metadata(self):
+        return [i + 1 for i in self.dataset.metadata_id.max(axis=0).values.tolist()]
+        
     def _init_net(self):
 
-        if net_type == 'lightfm':
+        if self.net_type == 'hybrid_cf':
           print('Training LightFM')
           self.net = LightFM(n_users=self.n_users, 
                               n_items=self.n_items, 
-                              n_metadata=self.n_metadata, 
+                              n_metadata=self.get_n_metadata if self.use_metadata else None, 
                               n_factors=self.n_factors, 
                               use_metadata=self.use_metadata, 
                               use_cuda=self.use_cuda)
@@ -87,7 +103,6 @@ class Recall(torch.nn.Module):
         optimizer.zero_grad()
                 
         loss_value = hinge_loss(positive, negative)                
-
         loss_value.backward()
         
         optimizer.step()
@@ -95,74 +110,80 @@ class Recall(torch.nn.Module):
         return loss_value.item()
     
     
-    def fit(self, optimizer, batch_size=1024, epochs=10, split_train_test=False, verbose=False):
+    def fit(self, optimizer, batch_size=1024, epochs=10, splitting_train_test=False):
         
-        if split_train_test:
+        if splitting_train_test:
             
             print('|== Splitting Train/Test ==|')
 
-            train, test = split_train_test(dataset, test_percentage=0.25, random_state=None)
+            train, test = split_train_test(self.dataset, test_percentage=0.25, random_state=None)
             
         else:
             
             train = self.dataset
         
         
-        self.total_train_auc = []
-        self.total_test_auc = []
+        train_loader = CustomDataLoader(dataset=train, batch_size=batch_size, shuffle = False)
+        
+        # self.total_train_auc = []
+        # self.total_test_auc = []
         self.total_loss = []
+
+        self.net = self.net.train()
 
 
         for epoch in range(epochs):
-
-            self.net = self.net.train()
-
-            print(f'Epoch: {epoch+1}')
             
-            epoch_loss = []
-
-            for first in range(0, len(train), batch_size):
+            for e, (users, items, metadata, weights) in enumerate(train_loader):                
                 
-                batch = train.iloc[first:first+batch_size, :]
-                
-                positive = self.forward(net=self.net, batch=batch, batch_size=batch_size)
+                positive = gpu(self.net(users, 
+                                        items, 
+                                        metadata = metadata if self.use_metadata else None, 
+                                        batch_size=batch_size), 
+                               self.use_cuda)
 
-                neg_batch = get_negative_batch(batch, self.n_items, self.dictionary)
-                negative = self.forward(net=self.net, batch=neg_batch, batch_size=batch_size)     
+                neg_items, neg_metadata = get_negative_batch(users, self.n_items,self.mapping_item_metadata, use_metadata = self.use_metadata)
+                negative = gpu(self.net(users, 
+                                        neg_items, 
+                                        metadata = neg_metadata, 
+                                        batch_size=batch_size), 
+                                self.use_cuda) 
                                                                 
                 loss_value = self.backward(positive, negative, optimizer)
+
+            if self.verbose:
+                print(f' Epoch {epoch}: loss {loss_value}')
                 
-            epoch_loss.append(loss_value)
-            self.total_loss.append(epoch_loss)
+            self.total_loss.append(loss_value)
             
             
-            if verbose:
-                ### AUC Calc.
-                ### Train
-                self.net = self.net.eval()
+            # if verbose:
+            #     ### AUC Calc.
+            #     ### Train
+            #     self.net = self.net.eval()
                 
-                train_sample = train.sample(n=20_000)
+            #     train_sample = train.sample(n=20_000)
 
-                positive_train = self.forward(net=self.net, batch=train_sample, batch_size=len(train_sample))
+            #     positive_train = self.forward(net=self.net, batch=train_sample, batch_size=len(train_sample))
 
-                neg_batch = get_negative_batch(train_sample, self.n_items, self.dictionary)  
-                negative_train = self.forward(net=self.net, batch=neg_batch, batch_size=len(train_sample))           
+            #     neg_batch = get_negative_batch(train_sample, self.n_items, self.dictionary)  
+            #     negative_train = self.forward(net=self.net, batch=neg_batch, batch_size=len(train_sample))           
                 
-                train_auc = auc_score(positive_train, negative_train)
-                self.total_train_auc.append(train_auc)
+            #     train_auc = auc_score(positive_train, negative_train)
+            #     self.total_train_auc.append(train_auc)
                 
-                ### Test
-                test_sample = test.sample(n=20_000) 
+            #     ### Test
+            #     test_sample = test.sample(n=20_000) 
                 
-                positive_test = self.forward(net=self.net, batch=test_sample, batch_size=len(test_sample))
+            #     positive_test = self.forward(net=self.net, batch=test_sample, batch_size=len(test_sample))
 
-                neg_batch = get_negative_batch(test_sample, self.n_items, self.dictionary)
-                negative_test = self.forward(net=self.net, batch=neg_batch, batch_size=len(test_sample))   
+            #     neg_batch = get_negative_batch(test_sample, self.n_items, self.dictionary)
+            #     negative_test = self.forward(net=self.net, batch=neg_batch, batch_size=len(test_sample))   
 
-                test_auc = auc_score(positive_test, negative_test)
-                self.total_test_auc.append(test_auc)
+            #     test_auc = auc_score(positive_test, negative_test)
+            #     self.total_test_auc.append(test_auc)
                 
-                print(f'== Loss: {sum(epoch_loss)} \n== Train AUC: {train_auc} \n== Test AUC: {test_auc}')
+            #     print(f'== Loss: {sum(epoch_loss)} \n== Train AUC: {train_auc} \n== Test AUC: {test_auc}')
             
     def history(self):
         

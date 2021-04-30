@@ -7,6 +7,7 @@ recall/helper/__pycache__/
 recall/sequence/__pycache__/
 .vscode/
 model/dataset/__pycache__/
-
+model/__pycache__/
+*.csv
 
 

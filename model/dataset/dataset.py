@@ -141,7 +141,8 @@ class Dataset():
 
         self.users = users
         self.items = items
-        
+        self.n_interactions = users.shape[0]
+
         if weights is not None:
             self.weights_numpy = weights
         
@@ -162,14 +163,14 @@ class Dataset():
     
     
     def _converting_torch_attr(self):
-        self.users_id = torch.from_numpy(self.users_id_numpy)
-        self.items_id = torch.from_numpy(self.items_id_numpy)
+        self.users_id = torch.from_numpy(self.users_id_numpy).view(-1,1)
+        self.items_id = torch.from_numpy(self.items_id_numpy).view(-1,1)
         
         if hasattr(self, 'weights_numpy'):
-            self.weights = torch.from_numpy(self.weights_numpy)
+            self.weights = torch.from_numpy(self.weights_numpy).view(-1,1)
 
         if hasattr(self, 'metadata'):
-            self.metadata_id  = torch.from_numpy(self.metadata_id_numpy)
+            self.metadata_id  = torch.from_numpy(self.metadata_id_numpy.astype(np.int64))
 
 
     def encoding_label(self):
@@ -184,7 +185,19 @@ class Dataset():
                 self.metadata_id_numpy[:,i], self.metadata_encoder[self.metadata_name[i]] = self._encondig_label(self.metadata[:,i])
 
         self._converting_torch_attr()
+    
+    @property
+    def get_item_metadata_mapping(self):
+        ## the index of tensor represent item id ---> value is its metadata
+
+        unique_items_ids, indices_items = np.unique(self.items_id.numpy().reshape(-1,),
+                                            return_index=True)
         
+        related_metadata_id = self.metadata_id[indices_items,:]
+
+        assert (unique_items_ids == self.items_id[indices_items].numpy().reshape(-1,)).all() , 'error in dictionary metadata'
+        
+        return related_metadata_id
 
     def __len__(self):
         return self.users.shape[0]
@@ -193,16 +206,17 @@ class Dataset():
     def __getitem__(self, index):
         
         if hasattr(self, 'metadata_id') and  hasattr(self, 'weights_id'):
-            return self.users_id[index : (index+1)], self.items_id[index: (index+1)], self.metadata_id[index: (index+1)], self.weights[index: (index+1)]
+            return self.users_id[index], self.items_id[index], self.metadata_id[index], self.weights[index]
 
         elif hasattr(self, 'metadata_id') and ~hasattr(self, 'weights_id'):
-            return self.users_id[index : (index+1)], self.items_id[index: (index+1)], self.metadata_id[index: (index+1)]
+            assert (self.get_item_metadata_mapping[int(self.items_id[index])] == self.metadata_id[index]).all()
+            return self.users_id[index], self.items_id[index], self.metadata_id[index], np.array([])
         
         elif ~hasattr(self, 'metadata_id') and hasattr(self, 'weights_id'):
-            return self.users_id[index : (index+1)], self.items_id[index: (index+1)], self.weights[index: (index+1)]
+            return self.users_id[index], self.items_id[index], np.array([]), self.weights[index]
         
         else:
-            return self.users_id[index : (index+1)], self.items_id[index: (index+1)]
+            return self.users_id[index], self.items_id[index], np.array([]), np.array([])
         
         
 class CustomDataLoader(DataLoader):
@@ -211,15 +225,7 @@ class CustomDataLoader(DataLoader):
         super(CustomDataLoader, self).__init__(*args, **kwargs)
         
         self.data = kwargs['dataset']
-        
-        
-    def get_item_metadata_dict(self):
-        
-        """
-        Optionally, depending on recall class refactoring
-        """
-        
-        pass
+    
     
     
     

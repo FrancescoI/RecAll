@@ -9,12 +9,11 @@ import numpy as np
 
 class LightFM(torch.nn.Module):
     
-    def __init__(self, n_users, n_items, n_metadata, n_factors, use_metadata=True, use_cuda=False):
+    def __init__(self, n_users, n_items, n_factors, n_metadata = None, use_metadata=True, use_cuda=False):
         super(LightFM, self).__init__()
 
         self.n_users = n_users
         self.n_items = n_items
-        self.n_metadata = n_metadata
         
         self.n_factors = n_factors
         
@@ -22,9 +21,9 @@ class LightFM(torch.nn.Module):
         self.use_cuda = use_cuda
         
         if use_metadata:
-            self.n_metadata = self.n_metadata
-            self.metadata_emb = gpu(ScaledEmbedding(self.n_metadata, n_factors), self.use_cuda)
-
+            self.n_metadata = n_metadata
+            self.metadata_emb = torch.nn.ModuleList([gpu(ScaledEmbedding(i, self.n_factors), self.use_cuda) for i in self.n_metadata])
+        
         
         self.user_emb = gpu(ScaledEmbedding(self.n_users, self.n_factors), self.use_cuda)
         self.item_emb = gpu(ScaledEmbedding(self.n_items, self.n_factors), self.use_cuda)
@@ -40,29 +39,35 @@ class LightFM(torch.nn.Module):
         Item Embeddings itself is the sum of the embeddings of the item ID and its metadata
         """
         
-        user = Variable(gpu(users), self.use_cuda))
-        item = Variable(gpu(items), self.use_cuda))
+        user = Variable(gpu(users, self.use_cuda))
+        item = Variable(gpu(items, self.use_cuda))
 
-        user_bias_emb = self.user_bias_emb(user)
-        item_bias_emb = self.item_bias_emb(item)
+        user_bias_emb = self.user_bias_emb(user).view(-1,1)
+        item_bias_emb = self.item_bias_emb(item).view(-1,1)
         
         user_emb = self.user_emb(user)
         item_emb = self.item_emb(item)
         
+        
         if self.use_metadata:
-            metadata = Variable(gpu(metadata)), self.use_cuda))
-            metadata_emb = self.metadata_emb(metadata) 
-            
-            ### Reshaping in order to match metadata tensor
-            item = item.reshape(len(batch['item_id'].values), 1, self.n_factors)        
-            item_metadata = torch.cat([item, metadata], axis=1)
+            metadata_emb = []
+            metadata = Variable(gpu(metadata, self.use_cuda))
+            for i,e in enumerate(self.metadata_emb):
+                metadata_out = e(metadata[:,i].view(-1,1))
+                metadata_emb.append(metadata_out)
 
+            ### concatenate metadata emb    
+            metadata_emb = torch.cat(metadata_emb,1)
+    
+            ### Reshaping in order to match metadata tensor
+            item_emb = [metadata_emb, item_emb]
+            item_emb = torch.cat(item_emb,1)
             ### sum of latent dimensions
-            item = item_metadata.sum(1)
+            item_emb = item_emb.sum(1).unsqueeze(1)
         
-        net = (user * item).sum(1).view(-1,1) + user_bias + item_bias
+        out = (user_emb * item_emb).sum(2).view(-1,1) + user_bias_emb + item_bias_emb
         
-        return net
+        return out
     
     def get_item_representation(self):
         
