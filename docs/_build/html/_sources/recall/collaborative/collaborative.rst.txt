@@ -1,6 +1,0 @@
-Collaborative
-=============
-
-.. automodule:: recall
-   :members:
-   :undoc-members:

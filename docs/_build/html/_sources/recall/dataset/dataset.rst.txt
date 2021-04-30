@@ -1,6 +1,0 @@
-Dataset
-============
-
-.. automodule:: recall.dataset
-   :members:
-   :undoc-members:

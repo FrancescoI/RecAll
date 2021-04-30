@@ -1,6 +1,0 @@
-Embeddings
-============
-
-.. automodule:: recall.embeddings
-   :members:
-   :undoc-members:
