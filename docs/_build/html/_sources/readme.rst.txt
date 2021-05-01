@@ -7,7 +7,7 @@ Installation
 
 .. code-block:: shell-session 
 
-   pip install RecAll
+   $ pip install RecAll
 
 
 Usage
