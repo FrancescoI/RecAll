@@ -177,8 +177,10 @@ class Dataset(object):
 
         unique_items_ids, indices_items = np.unique(self.items_id.numpy().reshape(-1,),
                                             return_index=True)
-        
-        related_metadata_id = self.metadata_id[indices_items,:]
+
+        related_metadata_id = torch.zeros((self.items_id.max()+1,self.metadata_id.shape[1])).type(torch.int64)
+
+        related_metadata_id[unique_items_ids] = self.metadata_id[indices_items,:]
 
         assert (unique_items_ids == self.items_id[indices_items].numpy().reshape(-1,)).all() , 'error in dictionary metadata'
         
@@ -194,7 +196,7 @@ class Dataset(object):
             return self.users_id[index], self.items_id[index], self.metadata_id[index], self.weights[index]
 
         elif hasattr(self, 'metadata_id') and ~hasattr(self, 'weights_id'):
-            #assert (self.get_item_metadata_mapping[int(self.items_id[index])] == self.metadata_id[index]).all()
+            # assert (self.get_item_metadata_mapping[int(self.items_id[index])] == self.metadata_id[index]).all()
             return self.users_id[index], self.items_id[index], self.metadata_id[index], np.array([])
         
         elif ~hasattr(self, 'metadata_id') and hasattr(self, 'weights_id'):
