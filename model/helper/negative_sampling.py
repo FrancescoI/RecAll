@@ -11,7 +11,7 @@ def get_negative_batch(users, n_items, mapping_item_metadata, use_metadata = Fal
     neg_item_id = torch.randint(0, n_items-1, (len(users),1))
     
     if use_metadata:
-        neg_metadata_id = mapping_item_metadata[neg_item_id]   
+        neg_metadata_id = mapping_item_metadata[neg_item_id].squeeze(1)   
     else:
         neg_metadata_id = None
     

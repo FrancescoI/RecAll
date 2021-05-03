@@ -135,9 +135,9 @@ class MyDataset():
             return None
         
         
-class Dataset():
+class Dataset(object):
     
-    def __init__(self, users, items, weights=None, metadata=None, metadata_name=None):
+    def __init__(self, users, items, weights=None, metadata=None, metadata_name=None,encoder = None):
 
         self.users = users
         self.items = items
@@ -150,18 +150,17 @@ class Dataset():
             self.metadata = metadata
             self.num_metadata = self.metadata.shape[1]
             self.metadata_name = metadata_name
+        
+        if encoder is None:
+            self.encoder = EncoderDataset()
+            self.users_id_numpy, self.items_id_numpy, self.metadata_id_numpy = self.encoder.encode_initialize(users,items,metadata,metadata_name)
+        else:
+            self.encoder = encoder
+            self.users_id_numpy, self.items_id_numpy, self.metadata_id_numpy = self.encoder.encode(users,items,metadata,metadata_name)
 
-        self.encoding_label()
+        self._converting_torch_attr()
 
-        
-    def _encondig_label(self,inpt):
-        
-        encoder = LabelEncoder()
-        opt_encoder = encoder.fit_transform(inpt)
-        
-        return opt_encoder, encoder
-    
-    
+
     def _converting_torch_attr(self):
         self.users_id = torch.from_numpy(self.users_id_numpy).view(-1,1)
         self.items_id = torch.from_numpy(self.items_id_numpy).view(-1,1)
@@ -171,20 +170,6 @@ class Dataset():
 
         if hasattr(self, 'metadata'):
             self.metadata_id  = torch.from_numpy(self.metadata_id_numpy.astype(np.int64))
-
-
-    def encoding_label(self):
-        self.users_id_numpy, self.users_encoder = self._encondig_label(self.users)
-        self.items_id_numpy, self.items_encoder = self._encondig_label(self.items)
-
-        if hasattr(self, 'metadata'):
-            self.metadata_id_numpy = np.zeros_like(self.metadata)
-            self.metadata_encoder = dict()
-            
-            for i in range(self.metadata.shape[1]):
-                self.metadata_id_numpy[:,i], self.metadata_encoder[self.metadata_name[i]] = self._encondig_label(self.metadata[:,i])
-
-        self._converting_torch_attr()
     
     @property
     def get_item_metadata_mapping(self):
@@ -209,7 +194,7 @@ class Dataset():
             return self.users_id[index], self.items_id[index], self.metadata_id[index], self.weights[index]
 
         elif hasattr(self, 'metadata_id') and ~hasattr(self, 'weights_id'):
-            assert (self.get_item_metadata_mapping[int(self.items_id[index])] == self.metadata_id[index]).all()
+            #assert (self.get_item_metadata_mapping[int(self.items_id[index])] == self.metadata_id[index]).all()
             return self.users_id[index], self.items_id[index], self.metadata_id[index], np.array([])
         
         elif ~hasattr(self, 'metadata_id') and hasattr(self, 'weights_id'):
@@ -225,12 +210,46 @@ class CustomDataLoader(DataLoader):
         super(CustomDataLoader, self).__init__(*args, **kwargs)
         
         self.data = kwargs['dataset']
+
+class EncoderDataset(object):
+
+    def __init__(self, name=None):
+        self.name = name
+
+    def _encondig_label(self,inpt):
+        encoder = LabelEncoder()
+        opt_encoder = encoder.fit_transform(inpt)
+        
+        return opt_encoder, encoder
+ 
+    def encode_initialize(self,users,items,metadata=None,metadata_name=None):
+        users_id_numpy, self.users_encoder = self._encondig_label(users)
+        items_id_numpy, self.items_encoder = self._encondig_label(items)
+
+        if metadata is not None:
+            metadata_id_numpy = np.zeros_like(metadata)
+            self.metadata_encoder = dict()
+            
+            for i in range(metadata.shape[1]):
+                metadata_id_numpy[:,i], self.metadata_encoder[metadata_name[i]] = self._encondig_label(metadata[:,i])
+        
+        else:
+            metadata_id_numpy = None
+
+        return users_id_numpy, items_id_numpy, metadata_id_numpy
     
-    
-    
-    
-    
-    
-    
-    
-    
+    def encode(self, user, items, metadata=None, metadata_name=None):
+        users_id_numpy = self.users_encoder.transform(user)
+        items_id_numpy = self.items_encoder.transform(items)
+
+        if hasattr(self, 'metadata_encoder'):
+            metadata_id_numpy = np.zeros_like(metadata)
+            
+            for i in range(metadata.shape[1]):
+                metadata_id_numpy[:,i] = self.metadata_encoder[metadata_name[i]].transform(metadata[:,i])
+        
+        else:
+            metadata_id_numpy = None
+        
+        return users_id_numpy, items_id_numpy, metadata_id_numpy
+

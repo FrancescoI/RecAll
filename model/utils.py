@@ -22,12 +22,14 @@ def split_train_test(dataset, test_percentage=0.25, random_state=None):
                     dataset.items[train_idx],
                     weights = dataset.weights[train_idx] if hasattr(dataset,'weights') else None,
                     metadata = dataset.metadata[train_idx] if hasattr(dataset,'metadata') else None,
-                    metadata_name = dataset.metadata_name if hasattr(dataset,'metadata_name') else None)
+                    metadata_name = dataset.metadata_name if hasattr(dataset,'metadata_name') else None,
+                    encoder = dataset.encoder)
 
     test = Dataset(dataset.users[test_idx],
                     dataset.items[test_idx],
                     weights = dataset.weights[test_idx] if hasattr(dataset,'weights') else None,
                     metadata = dataset.metadata[test_idx] if hasattr(dataset,'metadata') else None,
-                    metadata_name = dataset.metadata_name if hasattr(dataset,'metadata_name') else None)
+                    metadata_name = dataset.metadata_name if hasattr(dataset,'metadata_name') else None,
+                    encoder= dataset.encoder)
     
     return train,test

@@ -1,9 +1,9 @@
 .spyproject/
 recall/__pycache__/
-recall/collaborative/__pycache__/
+model/collaborative/__pycache__/
 recall/dataset/__pycache__/
-recall/embeddings/__pycache__/
-recall/helper/__pycache__/
+model/embeddings/__pycache__/
+model/helper/__pycache__/
 recall/sequence/__pycache__/
 .vscode/
 model/dataset/__pycache__/
