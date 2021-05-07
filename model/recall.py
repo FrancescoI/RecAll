@@ -110,7 +110,7 @@ class Recall(torch.nn.Module):
         return loss_value.item()
     
     
-    def fit(self, optimizer, batch_size=1024, epochs=10, splitting_train_test=False):
+    def fit(self, optimizer, batch_size=1024, epochs=10, splitting_train_test=False, evaluation=False, kind_eval='AUC'):
         
         if splitting_train_test:
             
@@ -129,34 +129,47 @@ class Recall(torch.nn.Module):
         # self.total_test_auc = []
         self.total_loss = []
 
-        self.net = self.net.train()
+        
 
 
         for epoch in range(epochs):
             
+            self.net = self.net.train()
             for e, (users, items, metadata, weights) in enumerate(train_loader):                
                 
                 positive = gpu(self.net(users, 
                                         items, 
-                                        metadata = metadata if self.use_metadata else None, 
-                                        batch_size=batch_size), 
+                                        metadata = metadata if self.use_metadata else None), 
                                self.use_cuda)
 
                 neg_items, neg_metadata = get_negative_batch(users, self.n_items,self.mapping_item_metadata, use_metadata = self.use_metadata)
                 negative = gpu(self.net(users, 
                                         neg_items, 
-                                        metadata = neg_metadata, 
-                                        batch_size=batch_size), 
+                                        metadata = neg_metadata), 
                                 self.use_cuda) 
                                                                 
-                loss_value = self.backward(positive, negative, optimizer)
+                loss_value.append(self.backward(positive, negative, optimizer)
+
+            
+            self.total_loss.append(loss_value)
 
             if self.verbose:
                 print(f' Epoch {epoch}: loss {loss_value}')
                 
-            self.total_loss.append(loss_value)
             
             
+            if evaluation:
+                pass
+    
+    def evaluation(self, users, items, metadata=None, kind='AUC'):
+
+        evaluation = EvaluateRec_all(self.net, users, items, mapping_item_metadata=self.mapping_item_metadata, metadata=metadata, k=None, kind=kind)
+        
+
+
+        
+
+
             # if verbose:
             #     ### AUC Calc.
             #     ### Train
@@ -184,6 +197,12 @@ class Recall(torch.nn.Module):
             #     self.total_test_auc.append(test_auc)
                 
             #     print(f'== Loss: {sum(epoch_loss)} \n== Train AUC: {train_auc} \n== Test AUC: {test_auc}')
+    
+
+
+
+
+
             
     def history(self):
         

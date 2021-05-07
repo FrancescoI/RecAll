@@ -32,7 +32,7 @@ class LightFM(torch.nn.Module):
         self.item_bias_emb = gpu(ZeroEmbedding(self.n_items, 1), self.use_cuda)
     
     
-    def forward(self, users, items, metadata = None, batch_size=128):
+    def forward(self, users, items, metadata = None):
         
         """
         Forward method that express the model as the dot product of user and item embeddings, plus the biases. 
