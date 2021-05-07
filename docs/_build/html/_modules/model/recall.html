@@ -1,0 +1,396 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>model.recall &mdash; RecAll v0.1.0 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> RecAll
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../readme.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../readme.html#usage">Usage</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../readme.html#collaborative-filtering-models">Collaborative Filtering models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../readme.html#dataset">Dataset</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../recall.html">RecAll</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../recall/dataset.html">Dataset</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">RecAll</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>model.recall</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for model.recall</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">model.collaborative.lightfm</span> <span class="kn">import</span> <span class="n">LightFM</span>
+<span class="kn">from</span> <span class="nn">model.collaborative.mlp</span> <span class="kn">import</span> <span class="n">MLP</span>
+<span class="kn">from</span> <span class="nn">model.collaborative.ease</span> <span class="kn">import</span> <span class="n">EASE</span>
+<span class="kn">from</span> <span class="nn">model.collaborative.neu</span> <span class="kn">import</span> <span class="n">NeuCF</span>
+<span class="kn">from</span> <span class="nn">model.helper.cuda</span> <span class="kn">import</span> <span class="n">gpu</span><span class="p">,</span> <span class="n">cpu</span>
+<span class="kn">from</span> <span class="nn">model.helper.loss</span> <span class="kn">import</span> <span class="n">hinge_loss</span>
+<span class="kn">from</span> <span class="nn">model.helper.evaluate</span> <span class="kn">import</span> <span class="n">auc_score</span>
+<span class="kn">from</span> <span class="nn">model.helper.negative_sampling</span> <span class="kn">import</span> <span class="n">get_negative_batch</span>
+
+
+<div class="viewcode-block" id="Recall"><a class="viewcode-back" href="../../recall.html#model.recall.Recall">[docs]</a><span class="k">class</span> <span class="nc">Recall</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Encodes users (or item sequences) and items in a low dimensional space, using dot products as similarity measure </span>
+<span class="sd">    and Collaborative Filterings or Sequence Models as backend.</span>
+<span class="sd">    </span>
+<span class="sd">    ----------</span>
+<span class="sd">    dataset: class</span>
+<span class="sd">        instance of dataset class</span>
+<span class="sd">    n_factors: int</span>
+<span class="sd">        dimensionality of the embedding space</span>
+<span class="sd">    net_type: string</span>
+<span class="sd">        type of the model/net.</span>
+<span class="sd">        &quot;LightFM&quot; -&gt; Collaborative Filtering with (optional) item metadata with add operator and dot product</span>
+<span class="sd">        &quot;MLP&quot; -&gt; Collaborative Filtering with (optional) item metadata with concat operator and a stack of linear layers</span>
+<span class="sd">        &quot;NeuCF&quot; -&gt; Combine LightFM and MLP with a concat layer and a stack of linear layers </span>
+<span class="sd">        &quot;EASE&quot; -&gt; Embarassingly Shallow Auto-Encoder</span>
+<span class="sd">        &quot;LSTM&quot; -&gt; Sequence Model using LSTM</span>
+<span class="sd">    use_metadata: boolean</span>
+<span class="sd">        Use True to add metadata to training procedure</span>
+<span class="sd">    use_cuda: boolean, optional</span>
+<span class="sd">        Use CUDA as backend. Default to False</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dataset</span><span class="p">,</span> <span class="n">n_factors</span><span class="p">,</span> <span class="n">net_type</span><span class="p">,</span> <span class="n">use_metadata</span><span class="p">,</span> <span class="n">use_cuda</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+             
+        <span class="bp">self</span><span class="o">.</span><span class="n">dataset</span> <span class="o">=</span> <span class="n">dataset</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_users</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">dataset</span><span class="p">[</span><span class="s1">&#39;user_id&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_items</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">dataset</span><span class="p">[</span><span class="s1">&#39;item_id&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dictionary</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">get_item_metadata_dict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_metadata</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_n_metadata</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dataset</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_factors</span> <span class="o">=</span> <span class="n">n_factors</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_cuda</span> <span class="o">=</span> <span class="n">use_cuda</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">net_type</span> <span class="o">=</span> <span class="n">net_type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_metadata</span> <span class="o">=</span> <span class="n">use_metadata</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_init_net</span><span class="p">(</span><span class="n">net_type</span><span class="o">=</span><span class="n">net_type</span><span class="p">)</span>
+
+    
+    <span class="k">def</span> <span class="nf">_get_n_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dataset</span><span class="p">):</span>
+        
+        <span class="n">n_metadata</span> <span class="o">=</span> <span class="mi">0</span>
+        
+        <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">dataset</span><span class="o">.</span><span class="n">metadata_id</span><span class="p">:</span>
+            <span class="n">n_metadata</span> <span class="o">+=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">dataset</span><span class="p">[</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span>
+        
+        <span class="k">return</span> <span class="n">n_metadata</span>
+
+    
+    <span class="k">def</span> <span class="nf">_init_net</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">net_type</span><span class="o">=</span><span class="s1">&#39;lightfm&#39;</span><span class="p">):</span>
+
+        <span class="k">if</span> <span class="n">net_type</span> <span class="o">==</span> <span class="s1">&#39;lightfm&#39;</span><span class="p">:</span>
+          <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Training LightFM&#39;</span><span class="p">)</span>
+          <span class="bp">self</span><span class="o">.</span><span class="n">net</span> <span class="o">=</span> <span class="n">LightFM</span><span class="p">(</span><span class="n">n_users</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_users</span><span class="p">,</span> 
+                              <span class="n">n_items</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_items</span><span class="p">,</span> 
+                              <span class="n">n_metadata</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_metadata</span><span class="p">,</span> 
+                              <span class="n">n_factors</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_factors</span><span class="p">,</span> 
+                              <span class="n">use_metadata</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">use_metadata</span><span class="p">,</span> 
+                              <span class="n">use_cuda</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">use_cuda</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">net_type</span> <span class="o">==</span> <span class="s1">&#39;mlp&#39;</span><span class="p">:</span>
+          <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;MLP under_construction&#39;</span><span class="p">)</span>
+          <span class="c1">#net = MLP(n_users, n_items, n_metadata, n_metadata_type, n_factors, use_metadata=True, use_cuda=False)</span>
+          
+        <span class="k">elif</span> <span class="n">net_type</span> <span class="o">==</span> <span class="s1">&#39;ease&#39;</span><span class="p">:</span>
+          <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;EASE under construction&#39;</span><span class="p">)</span>
+          
+        <span class="k">elif</span> <span class="n">net_type</span> <span class="o">==</span> <span class="s1">&#39;neucf&#39;</span><span class="p">:</span>
+          <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;NeuCF under construction&#39;</span><span class="p">)</span>
+        
+
+<div class="viewcode-block" id="Recall.forward"><a class="viewcode-back" href="../../recall.html#model.recall.Recall.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">net</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">):</span>
+
+        <span class="n">score</span> <span class="o">=</span> <span class="n">gpu</span><span class="p">(</span><span class="n">net</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_cuda</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">score</span></div>
+    
+    
+<div class="viewcode-block" id="Recall.backward"><a class="viewcode-back" href="../../recall.html#model.recall.Recall.backward">[docs]</a>    <span class="k">def</span> <span class="nf">backward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">positive</span><span class="p">,</span> <span class="n">negative</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">):</span>
+                
+        <span class="n">optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
+                
+        <span class="n">loss_value</span> <span class="o">=</span> <span class="n">hinge_loss</span><span class="p">(</span><span class="n">positive</span><span class="p">,</span> <span class="n">negative</span><span class="p">)</span>                
+
+        <span class="n">loss_value</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+        
+        <span class="n">optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+        
+        <span class="k">return</span> <span class="n">loss_value</span><span class="o">.</span><span class="n">item</span><span class="p">()</span></div>
+    
+    
+<div class="viewcode-block" id="Recall.fit"><a class="viewcode-back" href="../../recall.html#model.recall.Recall.fit">[docs]</a>    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">1024</span><span class="p">,</span> <span class="n">epochs</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">split_train_test</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        
+        <span class="k">if</span> <span class="n">split_train_test</span><span class="p">:</span>
+            
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;|== Splitting Train/Test ==|&#39;</span><span class="p">)</span>
+            
+            <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dataset</span><span class="o">.</span><span class="n">dataset</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">permutation</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dataset</span><span class="o">.</span><span class="n">dataset</span><span class="p">))]</span>
+            <span class="n">train</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:</span><span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.9</span><span class="p">)]</span>
+            <span class="n">test</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.9</span><span class="p">):]</span>
+            
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Shape Train: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">train</span><span class="p">)</span><span class="si">}</span><span class="s1"> </span><span class="se">\n</span><span class="s1">Shape Test: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">test</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+            
+        <span class="k">else</span><span class="p">:</span>
+            
+            <span class="n">train</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dataset</span><span class="o">.</span><span class="n">dataset</span>
+        
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">total_train_auc</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">total_test_auc</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">total_loss</span> <span class="o">=</span> <span class="p">[]</span>
+
+
+        <span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">epochs</span><span class="p">):</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">net</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">net</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
+
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Epoch: </span><span class="si">{</span><span class="n">epoch</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+            
+            <span class="n">epoch_loss</span> <span class="o">=</span> <span class="p">[]</span>
+
+            <span class="k">for</span> <span class="n">first</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">train</span><span class="p">),</span> <span class="n">batch_size</span><span class="p">):</span>
+                
+                <span class="n">batch</span> <span class="o">=</span> <span class="n">train</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">first</span><span class="p">:</span><span class="n">first</span><span class="o">+</span><span class="n">batch_size</span><span class="p">,</span> <span class="p">:]</span>
+                
+                <span class="n">positive</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">net</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">net</span><span class="p">,</span> <span class="n">batch</span><span class="o">=</span><span class="n">batch</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">)</span>
+
+                <span class="n">neg_batch</span> <span class="o">=</span> <span class="n">get_negative_batch</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_items</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dictionary</span><span class="p">)</span>
+                <span class="n">negative</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">net</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">net</span><span class="p">,</span> <span class="n">batch</span><span class="o">=</span><span class="n">neg_batch</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">)</span>     
+                                                                
+                <span class="n">loss_value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">backward</span><span class="p">(</span><span class="n">positive</span><span class="p">,</span> <span class="n">negative</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">)</span>
+                
+            <span class="n">epoch_loss</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">loss_value</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">total_loss</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">epoch_loss</span><span class="p">)</span>
+            
+            
+            <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                <span class="c1">### AUC Calc.</span>
+                <span class="c1">### Train</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">net</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">net</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+                
+                <span class="n">train_sample</span> <span class="o">=</span> <span class="n">train</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="mi">20_000</span><span class="p">)</span>
+
+                <span class="n">positive_train</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">net</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">net</span><span class="p">,</span> <span class="n">batch</span><span class="o">=</span><span class="n">train_sample</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">train_sample</span><span class="p">))</span>
+
+                <span class="n">neg_batch</span> <span class="o">=</span> <span class="n">get_negative_batch</span><span class="p">(</span><span class="n">train_sample</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_items</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dictionary</span><span class="p">)</span>  
+                <span class="n">negative_train</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">net</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">net</span><span class="p">,</span> <span class="n">batch</span><span class="o">=</span><span class="n">neg_batch</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">train_sample</span><span class="p">))</span>           
+                
+                <span class="n">train_auc</span> <span class="o">=</span> <span class="n">auc_score</span><span class="p">(</span><span class="n">positive_train</span><span class="p">,</span> <span class="n">negative_train</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">total_train_auc</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">train_auc</span><span class="p">)</span>
+                
+                <span class="c1">### Test</span>
+                <span class="n">test_sample</span> <span class="o">=</span> <span class="n">test</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="mi">20_000</span><span class="p">)</span> 
+                
+                <span class="n">positive_test</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">net</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">net</span><span class="p">,</span> <span class="n">batch</span><span class="o">=</span><span class="n">test_sample</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">test_sample</span><span class="p">))</span>
+
+                <span class="n">neg_batch</span> <span class="o">=</span> <span class="n">get_negative_batch</span><span class="p">(</span><span class="n">test_sample</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_items</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dictionary</span><span class="p">)</span>
+                <span class="n">negative_test</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">net</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">net</span><span class="p">,</span> <span class="n">batch</span><span class="o">=</span><span class="n">neg_batch</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">test_sample</span><span class="p">))</span>   
+
+                <span class="n">test_auc</span> <span class="o">=</span> <span class="n">auc_score</span><span class="p">(</span><span class="n">positive_test</span><span class="p">,</span> <span class="n">negative_test</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">total_test_auc</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">test_auc</span><span class="p">)</span>
+                
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;== Loss: </span><span class="si">{</span><span class="nb">sum</span><span class="p">(</span><span class="n">epoch_loss</span><span class="p">)</span><span class="si">}</span><span class="s1"> </span><span class="se">\n</span><span class="s1">== Train AUC: </span><span class="si">{</span><span class="n">train_auc</span><span class="si">}</span><span class="s1"> </span><span class="se">\n</span><span class="s1">== Test AUC: </span><span class="si">{</span><span class="n">test_auc</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span></div>
+            
+<div class="viewcode-block" id="Recall.history"><a class="viewcode-back" href="../../recall.html#model.recall.Recall.history">[docs]</a>    <span class="k">def</span> <span class="nf">history</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;train_loss&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_loss</span><span class="p">,</span>
+                <span class="s1">&#39;train_auc&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_train_auc</span><span class="p">,</span>
+                <span class="s1">&#39;test_auc&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_test_auc</span><span class="p">}</span></div>
+    
+<div class="viewcode-block" id="Recall.get_item_representation"><a class="viewcode-back" href="../../recall.html#model.recall.Recall.get_item_representation">[docs]</a>    <span class="k">def</span> <span class="nf">get_item_representation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">item</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, Francesco Imbriglia, Alessio Sciacchitano.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

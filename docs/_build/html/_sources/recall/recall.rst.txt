@@ -1,6 +1,0 @@
-Recall
-============
-
-.. automodule:: recall.recall
-   :members:
-   :undoc-members:
