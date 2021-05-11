@@ -25,7 +25,11 @@ optimizer = torch.optim.Adam(recall.net.parameters(),
 recall.fit(optimizer=optimizer,
            batch_size=128,
            epochs=20,
-           splitting_train_test=True)
+           splitting_train_test=True,
+           eval_bool=True)
+
+
+recall.predict(1)
 
 # from model.dataset.dataset import *
 # import pandas as pd

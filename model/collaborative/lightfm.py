@@ -89,7 +89,7 @@ class LightFM(torch.nn.Module):
             return self.item.weight.cpu().detach().numpy()
         
         
-    def predict(self, user_idx):
+    def predict(self, users):
         
         """
         It takes a user vector representation (based on user_idx arg) and it takes the dot product with

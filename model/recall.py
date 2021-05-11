@@ -10,7 +10,7 @@ from model.collaborative.ease import EASE
 from model.collaborative.neu import NeuCF
 from model.helper.cuda import gpu, cpu
 from model.helper.loss import hinge_loss
-from model.helper.evaluate import auc_score
+from model.evaluate import EvaluateRec_all
 from model.helper.negative_sampling import get_negative_batch
 
 
@@ -110,7 +110,7 @@ class Recall(torch.nn.Module):
         return loss_value.item()
     
     
-    def fit(self, optimizer, batch_size=1024, epochs=10, splitting_train_test=False, evaluation=False, kind_eval='AUC'):
+    def fit(self, optimizer, batch_size=1024, epochs=10, splitting_train_test=False, eval_bool = False, kind_eval='AUC'):
         
         if splitting_train_test:
             
@@ -129,8 +129,8 @@ class Recall(torch.nn.Module):
         # self.total_test_auc = []
         self.total_loss = []
 
-        
-
+        if eval_bool: 
+            self.evaluation = EvaluateRec_all(mapping_item_metadata=self.mapping_item_metadata, k=kind_eval, kind=kind_eval)
 
         for epoch in range(epochs):
             
@@ -148,7 +148,7 @@ class Recall(torch.nn.Module):
                                         metadata = neg_metadata), 
                                 self.use_cuda) 
                                                                 
-                loss_value.append(self.backward(positive, negative, optimizer)
+                loss_value = self.backward(positive, negative, optimizer)
 
             
             self.total_loss.append(loss_value)
@@ -158,13 +158,31 @@ class Recall(torch.nn.Module):
                 
             
             
-            if evaluation:
-                pass
-    
-    def evaluation(self, users, items, metadata=None, kind='AUC'):
+            if eval_bool:
+                self.evaluation.evaluation(self.net,
+                                test.users_id,
+                                test.items_id,
+                                metadata=test.metadata_id if self.use_metadata else None)
+                
+                self.evaluation.show()
 
-        evaluation = EvaluateRec_all(self.net, users, items, mapping_item_metadata=self.mapping_item_metadata, metadata=metadata, k=None, kind=kind)
+    def predict(self,user, items=None):
+        self.net.train(False)
         
+        user = np.atleast_2d(user)
+        user = gpu(torch.from_numpy(user.astype(np.int64).reshape(1, -1)), self.use_cuda)
+        
+        if items is None:
+            items = gpu(torch.arange(0,self.n_items).reshape(-1,1), self.use_cuda)
+
+        if self.use_metadata:
+            metadata = gpu(self.mapping_item_metadata[items,:].reshape(-1,len(self.get_n_metadata)), self.use_cuda)
+        
+        out = self.net(user, items, metadata=metadata)
+
+        return cpu(out).detach().numpy().flatten()
+
+    
 
 
         
