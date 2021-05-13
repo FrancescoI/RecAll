@@ -110,7 +110,7 @@ class Recall(torch.nn.Module):
         return loss_value.item()
     
     
-    def fit(self, optimizer, batch_size=1024, epochs=10, splitting_train_test=False, eval_bool = False, kind_eval='AUC'):
+    def fit(self, optimizer, batch_size=1024, epochs=10, splitting_train_test=False, eval_bool = False, kind_eval='AUC', k=3):
         
         if splitting_train_test:
             
@@ -130,7 +130,7 @@ class Recall(torch.nn.Module):
         self.total_loss = []
 
         if eval_bool: 
-            self.evaluation = EvaluateRec_all(mapping_item_metadata=self.mapping_item_metadata, k=kind_eval, kind=kind_eval)
+            self.evaluation = EvaluateRec_all(mapping_item_metadata=self.mapping_item_metadata, k=k, kind=kind_eval)
 
         for epoch in range(epochs):
             

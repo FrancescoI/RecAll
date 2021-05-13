@@ -29,7 +29,7 @@ class EvaluateRec_all(object):
             self.history['AUC'].append(score)
             
 
-        elif self.kind=='precision_recall_k':
+        elif self.kind=='precision_recall':
             score = self.precision_recall_k(net, users, items, metadata = metadata)
             self.history['precision_recall'].append(score)
             
@@ -77,14 +77,14 @@ class EvaluateRec_all(object):
         return np.mean(total_auc)
 
 
-    def precision_recall_k(self, net, users, targets, metadata=None):
+    def precision_recall_k(self,  net, users, targets, metadata=None):
         
         self.total_precision = []
         self.total_recall = []
         
         for i, user in enumerate(users):
             
-            prediction = np.argsort(-net.predict(users[user]))[:self.k]
+            prediction = np.argsort(-net.predict(user))[:self.k]
 
             n_matching = len(set(targets[i]).intersection(set(prediction)))
             precision = float(n_matching) / self.k

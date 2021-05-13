@@ -26,7 +26,12 @@ recall.fit(optimizer=optimizer,
            batch_size=128,
            epochs=20,
            splitting_train_test=True,
-           eval_bool=True)
+           eval_bool=False,
+           kind_eval='precision_recall')
+
+evaluation = EvaluateRec_all(mapping_item_metadata=recall.mapping_item_metadata, k=3, kind='precision_recall')
+evaluation.evaluation(recall, dataset.users_id, dataset.items_id, metadata = dataset.metadata_id)
+evaluation.show()
 
 
 recall.predict(1)
