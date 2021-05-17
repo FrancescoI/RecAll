@@ -25,7 +25,7 @@ recall.fit(batch_size=128,
            splitting_train_test=True,
            eval_bool=True)
 
-print('--- TRIAL ---\n')
+print('\n--- TRIAL ---\n')
 
 for i in range(1,10):
     user = dataset.encoder.users_encoder.inverse_transform([i])

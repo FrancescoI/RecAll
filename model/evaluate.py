@@ -94,4 +94,3 @@ class EvaluateRec_all(object):
             self.total_recall.append(recall)
 
         return self.total_precision, self.total_recall
-            
