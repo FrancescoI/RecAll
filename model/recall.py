@@ -42,15 +42,19 @@ class Recall(torch.nn.Module):
     def __init__(self,
                  dataset, 
                  n_factors,
-                 net_type = 'light_fm', 
+                 net_type = 'light_fm',
+                 optimizer = 'Adam',
+                 lr = 3e-3,
                  use_metadata = False,
                  use_cuda=False, 
                  verbose = True):
+
         super().__init__()
              
         self.dataset = dataset
         self.n_users = int(self.dataset.users_id.max()) + 1
         self.n_items = int(self.dataset.items_id.max()) + 1
+        self.epoch = 0
         self.use_metadata = use_metadata
         self.mapping_item_metadata = dataset.get_item_metadata_mapping if use_metadata else None
         
@@ -64,13 +68,13 @@ class Recall(torch.nn.Module):
         self.net_type = net_type
         
 
-        self._init_net()
+        self._init_net(optimizer, lr)
 
     @property
     def get_n_metadata(self):
         return [i + 1 for i in self.dataset.metadata_id.max(axis=0).values.tolist()]
         
-    def _init_net(self):
+    def _init_net(self, optimizer, lr):
 
         if self.net_type == 'hybrid_cf':
           print('Training LightFM')
@@ -80,6 +84,7 @@ class Recall(torch.nn.Module):
                               n_factors=self.n_factors, 
                               use_metadata=self.use_metadata, 
                               use_cuda=self.use_cuda)
+
         elif net_type == 'mlp':
           print('MLP under_construction')
           #net = MLP(n_users, n_items, n_metadata, n_metadata_type, n_factors, use_metadata=True, use_cuda=False)
@@ -90,6 +95,15 @@ class Recall(torch.nn.Module):
         elif net_type == 'neucf':
           print('NeuCF under construction')
         
+        self.optimizer = self.get_optimizer(optimizer, lr=lr)
+        
+    def get_optimizer(self, optimizer, lr=3e-3):
+
+        if optimizer == 'Adam':
+            return torch.optim.Adam(self.net.parameters(),
+                             lr=lr)
+        else:
+            pass
 
     def forward(self, net, batch, batch_size):
 
@@ -98,19 +112,43 @@ class Recall(torch.nn.Module):
         return score
     
     
-    def backward(self, positive, negative, optimizer):
+    def backward(self, positive, negative):
                 
-        optimizer.zero_grad()
+        self.optimizer.zero_grad()
                 
         loss_value = hinge_loss(positive, negative)                
         loss_value.backward()
         
-        optimizer.step()
+        self.optimizer.step()
         
         return loss_value.item()
     
+    def fit_partial(self, users, items, metadata=None, verbose=False):
+        
+        self.epoch+=1
+
+        self.net = self.net.train()
+
+        positive = gpu(self.net(users, 
+                                items, 
+                                metadata = metadata if self.use_metadata else None), 
+                        self.use_cuda)
+
+        neg_items, neg_metadata = get_negative_batch(users, self.n_items,self.mapping_item_metadata, use_metadata = self.use_metadata)
+        negative = gpu(self.net(users, 
+                                neg_items, 
+                                metadata = neg_metadata), 
+                        self.use_cuda) 
+                                                        
+        loss_value = self.backward(positive, negative)
+
+        if verbose:
+            print(f'epoch fitting : {self.epoch}')
+
+        return loss_value
+
     
-    def fit(self, optimizer, batch_size=1024, epochs=10, splitting_train_test=False, eval_bool = False, kind_eval='AUC', k=3):
+    def fit(self, batch_size=1024, epochs=10, splitting_train_test=False, eval_bool = False, kind_eval='AUC', k=3):
         
         if splitting_train_test:
             
@@ -134,21 +172,9 @@ class Recall(torch.nn.Module):
 
         for epoch in range(epochs):
             
-            self.net = self.net.train()
+            
             for e, (users, items, metadata, weights) in enumerate(train_loader):                
-                
-                positive = gpu(self.net(users, 
-                                        items, 
-                                        metadata = metadata if self.use_metadata else None), 
-                               self.use_cuda)
-
-                neg_items, neg_metadata = get_negative_batch(users, self.n_items,self.mapping_item_metadata, use_metadata = self.use_metadata)
-                negative = gpu(self.net(users, 
-                                        neg_items, 
-                                        metadata = neg_metadata), 
-                                self.use_cuda) 
-                                                                
-                loss_value = self.backward(positive, negative, optimizer)
+                loss_value = self.fit_partial(users, items, metadata=metadata)
 
             
             self.total_loss.append(loss_value)
@@ -156,16 +182,7 @@ class Recall(torch.nn.Module):
             if self.verbose:
                 print(f' Epoch {epoch}: loss {loss_value}')
                 
-            
-            
-            if eval_bool:
-                self.evaluation.evaluation(self.net,
-                                test.users_id,
-                                test.items_id,
-                                metadata=test.metadata_id if self.use_metadata else None)
-                
-                self.evaluation.show()
-
+    
     def predict(self,user, items=None):
         self.net.train(False)
         
@@ -181,47 +198,7 @@ class Recall(torch.nn.Module):
         out = self.net(user, items, metadata=metadata)
 
         return cpu(out).detach().numpy().flatten()
-
     
-
-
-        
-
-
-            # if verbose:
-            #     ### AUC Calc.
-            #     ### Train
-            #     self.net = self.net.eval()
-                
-            #     train_sample = train.sample(n=20_000)
-
-            #     positive_train = self.forward(net=self.net, batch=train_sample, batch_size=len(train_sample))
-
-            #     neg_batch = get_negative_batch(train_sample, self.n_items, self.dictionary)  
-            #     negative_train = self.forward(net=self.net, batch=neg_batch, batch_size=len(train_sample))           
-                
-            #     train_auc = auc_score(positive_train, negative_train)
-            #     self.total_train_auc.append(train_auc)
-                
-            #     ### Test
-            #     test_sample = test.sample(n=20_000) 
-                
-            #     positive_test = self.forward(net=self.net, batch=test_sample, batch_size=len(test_sample))
-
-            #     neg_batch = get_negative_batch(test_sample, self.n_items, self.dictionary)
-            #     negative_test = self.forward(net=self.net, batch=neg_batch, batch_size=len(test_sample))   
-
-            #     test_auc = auc_score(positive_test, negative_test)
-            #     self.total_test_auc.append(test_auc)
-                
-            #     print(f'== Loss: {sum(epoch_loss)} \n== Train AUC: {train_auc} \n== Test AUC: {test_auc}')
-    
-
-
-
-
-
-            
     def history(self):
         
         return {'train_loss': self.total_loss,

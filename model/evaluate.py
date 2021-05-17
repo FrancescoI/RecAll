@@ -42,7 +42,7 @@ class EvaluateRec_all(object):
             print(f'AUC: {np.mean(self.total_auc)} \n')
         
         elif self.kind == 'precision_recall':
-            print(f'Precision@{self.k}: {np.mean(self.total_precision)} \nRecall@{self.k}: {np.mean(self.total_recall)} \n')
+            print(f'Precision@{self.k}: {"%.4f" % np.mean(self.total_precision)} \nRecall@{self.k}: {"%.4f" % np.mean(self.total_recall)} \n')
     
     def auc(self, net, users, items, metadata=None):
 
@@ -94,5 +94,4 @@ class EvaluateRec_all(object):
             self.total_recall.append(recall)
 
         return self.total_precision, self.total_recall
-        # print(f'Train Precision@{k}: {np.mean(total_precision)} \nTrain Recall@{k}: {np.mean(total_recall)} \nTrain Shape: {sparse_matrix.getnnz()}')
             
