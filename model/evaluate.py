@@ -11,7 +11,7 @@ import scipy.sparse as sp
 
 class EvaluateRec_all(object):
 
-    def __init__(self, mapping_item_metadata=None, k=None, kind='AUC'):
+    def __init__(self, mapping_item_metadata=None, k=3, kind='AUC'):
 
         self.mapping_item_metadata = mapping_item_metadata
         self.kind = kind
@@ -81,14 +81,17 @@ class EvaluateRec_all(object):
         
         self.total_precision = []
         self.total_recall = []
+
+        users_unique = torch.unique(users)
         
-        for i, user in enumerate(users):
-            
+        for i, user in enumerate(users_unique):
+
+            target = targets[users==user]
             prediction = np.argsort(-net.predict(user))[:self.k]
 
-            n_matching = len(set(targets[i]).intersection(set(prediction)))
+            n_matching = len(set(target).intersection(set(prediction)))
             precision = float(n_matching) / self.k
-            recall = float(n_matching) / len(targets[i])
+            recall = float(n_matching) / len(target)
 
             self.total_precision.append(precision)
             self.total_recall.append(recall)

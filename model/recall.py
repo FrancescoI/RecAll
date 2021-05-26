@@ -168,7 +168,7 @@ class Recall(torch.nn.Module):
         self.total_loss = []
 
         if eval_bool and splitting_train_test: 
-            self.evaluation = EvaluateRec_all(mapping_item_metadata=self.mapping_item_metadata, k=k, kind='auc')
+            self.evaluation = EvaluateRec_all(mapping_item_metadata=self.mapping_item_metadata, k=k, kind='AUC')
             
 
         for epoch in range(epochs):
@@ -185,9 +185,7 @@ class Recall(torch.nn.Module):
         
             if eval_bool and splitting_train_test:
                 self.evaluation.evaluation(self.net, test.users_id, test.items_id, metadata = test.metadata_id)
-
-                if self.verbose:
-                    self.evaluation.show()
+                self.evaluation.show()
                 
     
     def predict(self,user, items=None):
