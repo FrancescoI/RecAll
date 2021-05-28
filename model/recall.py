@@ -4,7 +4,7 @@ import torch
 import numpy as np
 from model.utils import split_train_test
 from model.dataset.dataset import CustomDataLoader
-from model.collaborative.lightfm import LightFM
+from model.collaborative.hybrid_cf import Hybrid_cf
 from model.collaborative.mlp import MLP
 from model.collaborative.ease import EASE
 from model.collaborative.neu import NeuCF
@@ -42,7 +42,9 @@ class Recall(torch.nn.Module):
     def __init__(self,
                  dataset, 
                  n_factors,
-                 net_type = 'light_fm',
+                 net_type = 'hybrid_cf',
+                 n_linear_neurons = [1024,128,64],
+                 activation_functions = ['relu','relu','relu'],
                  optimizer = 'Adam',
                  lr = 3e-3,
                  use_metadata = False,
@@ -62,6 +64,8 @@ class Recall(torch.nn.Module):
         self.verbose = verbose
 
         self.n_factors = n_factors
+        self.n_linear_neurons = n_linear_neurons
+        self.activation_functions = activation_functions
         
         self.use_cuda = use_cuda
 
@@ -78,21 +82,27 @@ class Recall(torch.nn.Module):
 
         if self.net_type == 'hybrid_cf':
           print('Training LightFM')
-          self.net = LightFM(n_users=self.n_users, 
+          self.net = Hybrid_cf(n_users=self.n_users, 
                               n_items=self.n_items, 
                               n_metadata=self.get_n_metadata if self.use_metadata else None, 
                               n_factors=self.n_factors, 
                               use_metadata=self.use_metadata, 
                               use_cuda=self.use_cuda)
 
-        elif net_type == 'mlp':
-          print('MLP under_construction')
-          #net = MLP(n_users, n_items, n_metadata, n_metadata_type, n_factors, use_metadata=True, use_cuda=False)
+        elif self.net_type == 'mlp':
+          self.net = MLP(n_users=self.n_users, 
+                              n_items=self.n_items, 
+                              n_metadata=self.get_n_metadata if self.use_metadata else [], 
+                              n_factors=self.n_factors,
+                              n_linear_neurons=self.n_linear_neurons,
+                              activation_functions=self.activation_functions,
+                              use_metadata=self.use_metadata, 
+                              use_cuda=self.use_cuda)
           
-        elif net_type == 'ease':
+        elif self.net_type == 'ease':
           print('EASE under construction')
           
-        elif net_type == 'neucf':
+        elif self.net_type == 'neucf':
           print('NeuCF under construction')
         
         self.optimizer = self.get_optimizer(optimizer, lr=lr)
@@ -193,9 +203,13 @@ class Recall(torch.nn.Module):
         
         user = np.atleast_2d(user)
         user = gpu(torch.from_numpy(user.astype(np.int64).reshape(1, -1)), self.use_cuda)
+
         
         if items is None:
             items = gpu(torch.arange(0,self.n_items).reshape(-1,1), self.use_cuda)
+        
+        if self.net_type=='mlp':
+            user = user.repeat(items.shape[0],items.shape[1])
 
         if self.use_metadata:
             metadata = gpu(self.mapping_item_metadata[items,:].reshape(-1,len(self.get_n_metadata)), self.use_cuda)

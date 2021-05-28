@@ -7,10 +7,10 @@ from model.helper.cuda import gpu
 import pandas as pd
 import numpy as np
 
-class LightFM(torch.nn.Module):
+class Hybrid_cf(torch.nn.Module):
     
     def __init__(self, n_users, n_items, n_factors, n_metadata = None, use_metadata=True, use_cuda=False):
-        super(LightFM, self).__init__()
+        super(Hybrid_cf, self).__init__()
 
         self.n_users = n_users
         self.n_items = n_items
@@ -87,19 +87,3 @@ class LightFM(torch.nn.Module):
         
         else:
             return self.item.weight.cpu().detach().numpy()
-        
-        
-    # def predict(self, users):
-        
-    #     """
-    #     It takes a user vector representation (based on user_idx arg) and it takes the dot product with
-    #     the item representation
-    #     """
-        
-    #     item_repr, _, _ = self.get_item_representation()
-    #     user_repr = self.user.weight.detach().numpy()
-        
-    #     item_bias = self.item_bias.weight.detach().numpy()
-    #     user_bias = self.user_bias[torch.tensor([user_idx])].detach().numpy()
-        
-    #     return np.dot(user_pred[user_idx, :], item_repr) + item_bias + user_bias

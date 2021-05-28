@@ -3,7 +3,7 @@
 from model.recall import *
 from model.dataset.dataset import *
 
-missoni = pd.read_csv('missoni.csv').sample(n = 1000)
+missoni = pd.read_csv('missoni.csv').sample(n = 100000)
 
 
 dataset = Dataset(missoni['hashedEmail'].values,
@@ -20,7 +20,7 @@ recall = Recall(dataset,
                 verbose = True)
 
 
-recall.fit(batch_size=128,
+recall.fit(batch_size=1024,
            epochs=20,
            splitting_train_test=True,
            eval_bool=True)

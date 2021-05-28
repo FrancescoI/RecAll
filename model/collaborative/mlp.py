@@ -12,75 +12,73 @@ class MLP(torch.nn.Module):
 
     ### UNDER COSTRUCTION
     
-    def __init__(self, n_users, n_items, n_metadata, n_metadata_type, n_factors, use_metadata=True, use_cuda=False):
+    def __init__(self, n_users, n_items, n_metadata, n_factors, n_linear_neurons=[1024,126,64], activation_functions=['relu','relu','relu'],  use_metadata=True, use_cuda=False):
         super(MLP, self).__init__()
+        
+        self.n_users = n_users
+        self.n_items = n_items
+        
+        self.n_factors = n_factors
+        self.n_linear_layers = len(n_linear_neurons)
         
         self.use_metadata = use_metadata
         self.use_cuda = use_cuda
 
-        if use_metadata:
+        self.activation_func = [self.get_activation_function(i) for i in activation_functions]
+        
+        self.user_emb = gpu(ScaledEmbedding(self.n_users, self.n_factors), self.use_cuda)
+        self.item_emb = gpu(ScaledEmbedding(self.n_items, self.n_factors), self.use_cuda)
+
+        if use_metadata:    
             self.n_metadata = n_metadata
-            self.n_metadata_type = n_metadata_type
-            self.metadata = gpu(ScaledEmbedding(self.n_metadata, n_factors), self.use_cuda)
+            self.metadata_emb = torch.nn.ModuleList([gpu(ScaledEmbedding(i, self.n_factors), self.use_cuda) for i in self.n_metadata])
             
-        else:
-            self.n_metadata_type = 0
         
-        self.linear_1 = gpu(torch.nn.Linear(n_factors*(2+self.n_metadata_type), int(self.n_factors/2)), self.use_cuda)
-        self.linear_2 = gpu(torch.nn.Linear(int(self.n_factors/2), int(self.n_factors/4)), self.use_cuda)
-        self.linear_3 = gpu(torch.nn.Linear(int(self.n_factors/4), 1), self.use_cuda)
-        
-    def _get_n_metadata(self, dataset):
-        
-        n_metadata = 0
-        
-        for col in dataset.metadata_id:
-            n_metadata += dataset.dataset[col].max() + 1
-        
-        return n_metadata
+        n_linear_neurons = [n_factors*(2+len(self.n_metadata))] + n_linear_neurons + [1]
+        linear_layer = []
+       
+        for layer in range(len(n_linear_neurons)-1):
+            linear_layer.append(gpu(torch.nn.Linear(int(n_linear_neurons[layer]), int(n_linear_neurons[layer+1])), self.use_cuda))
+
+        self.linear_layers = torch.nn.ModuleList(linear_layer)
     
-    def _get_n_metadata_type(self, dataset):
-        
-        return len(dataset.metadata)
+    def get_activation_function(self,activation_func):
+        return eval('torch.nn.functional.'+activation_func)
     
     
-    def mlp(self, dataset, batch_size=1):
+    def forward(self, users, items, metadata = None):
         
         """
         """
-        user = gpu(torch.from_numpy(dataset['user_id'].values), self.use_cuda)
-        item = gpu(torch.from_numpy(dataset['item_id'].values), self.use_cuda)
+
+        user = Variable(gpu(users, self.use_cuda))
+        item = Variable(gpu(items, self.use_cuda))
+
+        user_emb = self.user_emb(user).squeeze(1)
+        item_emb = self.item_emb(item).squeeze(1)
         
         if self.use_metadata:
-            metadata = Variable(gpu(torch.LongTensor(list(dataset['metadata'])), self.use_cuda))
-            metadata = self.metadata(metadata).reshape(batch_size, self.n_factors*self.n_metadata_type)
+            metadata_emb = []
+            metadata = Variable(gpu(metadata, self.use_cuda))
+
+            for i,e in enumerate(self.metadata_emb):
+                metadata_out = e(metadata[:,i].view(-1,1)).squeeze(1)
+                metadata_emb.append(metadata_out)
             
-        user = self.user(user)
-        item = self.item(item)
-        
-        if self.use_metadata:
-            cat = torch.cat([user, item, metadata], axis=1).reshape(batch_size, (2+self.n_metadata_type)*self.n_factors)
+            metadata_emb = torch.cat(metadata_emb,1)
+            out = torch.cat([user_emb, item_emb, metadata_emb], 1)
+
         else:
-            cat = torch.cat([user, item], axis=1).reshape(batch_size, 2*self.n_factors)
-                
-        net = self.linear_1(cat)
-        net = torch.nn.functional.relu(net)
+            out = torch.cat([user_emb, item_emb], 1)
         
-        net = self.linear_2(net)
-        net = torch.nn.functional.relu(net)
+        for i,l in enumerate(self.linear_layers):
+             out = l(out)
+
+             if i<self.n_linear_layers:
+                out = self.activation_func[i](out)
         
-        net = self.linear_3(net)
-        
-        return net
-    
-    def forward(self, dataset, batch_size=1):
-        
-        """
-        """
-        
-        net = gpu(self.mlp(dataset, batch_size), self.use_cuda)
-                
-        return net
+        return out
+
     
     def get_item_representation(self):
         
